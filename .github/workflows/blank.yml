@@ -1,0 +1,39 @@
+name: Compilar BRP
+
+on:
+workflow_dispatch:
+push:
+branches: [main]
+
+jobs:
+build:
+runs-on: ubuntu-latest
+steps:
+- name: Baixar repositório
+uses: actions/checkout@v4
+
+  - name: Instalar dependências
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y git cmake build-essential
+
+  - name: Baixar compilador Pawn
+    run: |
+      git clone https://github.com/pawn-lang/compiler.git pawn-compiler
+      git clone https://github.com/pawn-lang/samp-stdlib.git includes
+
+  - name: Construir compilador
+    run: |
+      cmake -S pawn-compiler/source/compiler -B pawn-compiler/build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      cmake --build pawn-compiler/build --target pawncc -j2
+
+  - name: Compilar gamemode
+    run: |
+      test -f brasil_roleplay.pwn
+      ./pawn-compiler/build/pawncc brasil_roleplay.pwn -iincludes -o brasil_roleplay.amx
+
+  - name: Disponibilizar AMX
+    uses: actions/upload-artifact@v4
+    with:
+      name: brasil-roleplay-amx
+      path: brasil_roleplay.amx
